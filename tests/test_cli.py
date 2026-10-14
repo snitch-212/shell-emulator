@@ -48,20 +48,20 @@ class CliTest(unittest.TestCase):
 
     def test_script_echoes_dialog(self):
         """Скрипт показывает приглашение, команду и её вывод."""
-        path = write_script(self, "# note\nls -l\n\nexit 4\nls x\n")
+        path = write_script(self, "# note\npwd\n\nexit 4\nls x\n")
         code, out, _ = run_main("--script", path)
         self.assertEqual(code, 4)
         self.assertIn("# note\n", out)
-        self.assertRegex(out, r"\$ ls -l\nls -l\n")
+        self.assertRegex(out, r"\$ pwd\n/home/[^\n]+\n")
         self.assertNotIn("ls x", out)
 
     def test_script_errors_have_line_numbers(self):
         """Ошибки скрипта выводятся с номером строки, скрипт идёт дальше."""
-        path = write_script(self, "foo\ncd a b\nls ok\n")
+        path = write_script(self, "foo\ncd a b\npwd\n")
         _, out, err = run_main("--script", path)
         self.assertIn(f"{path}: line 1: foo: command not found", err)
         self.assertIn(f"{path}: line 2: cd: too many arguments", err)
-        self.assertIn("ls ok\n", out)
+        self.assertIn("$ pwd\n/home/", out)
 
     def test_missing_script(self):
         """Отсутствующий скрипт — сообщение и код 1."""
@@ -71,7 +71,7 @@ class CliTest(unittest.TestCase):
 
     def test_interactive_after_script(self):
         """После скрипта эмулятор читает команды пользователя."""
-        path = write_script(self, "ls a\n")
-        code, out, _ = run_main("--script", path, stdin="ls b\nexit 7\n")
+        path = write_script(self, "cd /etc\n")
+        code, out, _ = run_main("--script", path, stdin="pwd\nexit 7\n")
         self.assertEqual(code, 7)
-        self.assertIn("ls b", out)
+        self.assertIn("pwd\n/etc\n", out)

@@ -42,7 +42,7 @@ class Shell:
     def error(self, message):
         """Вывести сообщение об ошибке в поток ошибок."""
         self.out.flush()
-        print(message, file=self.err)
+        print(self.location + message, file=self.err)
         self.err.flush()
 
     def home_dir(self):
@@ -78,15 +78,15 @@ class Shell:
             return self._fail(f"{name}: command not found",
                               STATUS_NOT_FOUND)
         try:
-            handler(self, args)
+            status = handler(self, args) or STATUS_OK
         except ShellError as exc:
             return self._fail(f"{name}: {exc}", STATUS_ERROR)
-        self.last_status = STATUS_OK
-        return STATUS_OK
+        self.last_status = status
+        return status
 
     def _fail(self, message, status):
         """Сообщить об ошибке и запомнить код возврата."""
-        self.error(self.location + message)
+        self.error(message)
         self.last_status = status
         return status
 

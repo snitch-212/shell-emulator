@@ -35,6 +35,7 @@ MULTI = {
 DEEP = {
     "home/": (0o755, None),
     "home/student/notes.txt": (0o600, "Level 3 file\n"),
+    "home/student/.profile": (0o644, "export EDITOR=nano\n"),
     "home/student/projects/": (0o755, None),
     "projects/app/src/main.py": (0o644, "print('hello')\n"),
     "projects/app/src/utils/helpers.py": (0o644, "def f():\n    pass\n"),
@@ -42,6 +43,8 @@ DEEP = {
     "projects/app/run.sh": (0o755, "#!/bin/sh\npython3 src/main.py\n"),
     "projects/app/assets/icon.bin": (0o644, BINARY_DATA),
     "var/log/syslog": (0o640, "boot\nboot\nstart\nstart\nstart\nstop\n"),
+    "var/log/access.log": (0o640, "GET /\nget /\nGET /\nPOST /login\n"
+                                  "post /login\nGET /about\n"),
     "etc/motd": (0o644, "Welcome to the deep VFS\n"),
 }
 

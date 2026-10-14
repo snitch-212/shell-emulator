@@ -1,24 +1,9 @@
-"""Базовые команды: заглушки ls и cd, команда exit."""
+"""Базовые команды оболочки: exit."""
 
 from ..errors import ExitRequest, ShellError
-from .options import split_options
 
 EXIT_CODE_MODULO = 256
-MAX_CD_ARGS = 1
 MAX_EXIT_ARGS = 1
-
-
-def cmd_ls(shell, args):
-    """Заглушка ls: вывести имя команды и аргументы."""
-    split_options(args, "la")
-    shell.write(" ".join(["ls", *args]))
-
-
-def cmd_cd(shell, args):
-    """Заглушка cd: вывести имя команды и аргументы."""
-    if len(args) > MAX_CD_ARGS:
-        raise ShellError("too many arguments")
-    shell.write(" ".join(["cd", *args]))
 
 
 def cmd_exit(shell, args):

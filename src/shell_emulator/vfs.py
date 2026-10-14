@@ -22,6 +22,9 @@ MSDOS_DIR_FLAG = 0x10
 MIN_ZIP_YEAR = 1980
 ZIP_DATE_FIELDS = 6
 TIME_TUPLE_TAIL = (0, 0, -1)
+READ = 0o400
+WRITE = 0o200
+EXECUTE = 0o100
 
 
 class VfsError(ShellError):
@@ -105,6 +108,7 @@ class Vfs:
         self.root = root or VfsDir("")
         self.source = source
         self.home = home
+        self.previous = None
         try:
             self.cwd = self.resolve(home)
         except ShellError:
@@ -116,6 +120,8 @@ class Vfs:
 
         :raises ShellError: если путь не существует
         """
+        if path == "~" or path.startswith("~/"):
+            path = self.home + path[1:]
         node = self.root if path.startswith("/") else self.cwd
         for part in path.split("/"):
             node = _step(node, part, path)
@@ -131,6 +137,15 @@ class Vfs:
                 yield from self.walk(child)
 
 
+def check_access(node, permission, path):
+    """Проверить право владельца (READ, WRITE, EXECUTE) на узел.
+
+    :raises ShellError: если право отсутствует
+    """
+    if not node.mode & permission:
+        raise ShellError(f"{path}: Permission denied")
+
+
 def _step(node, part, path):
     """Сделать один шаг по пути от узла ``node``."""
     if part in ("", "."):
@@ -139,13 +154,14 @@ def _step(node, part, path):
         raise ShellError(f"{path}: Not a directory")
     if part == "..":
         return node.parent or node
+    check_access(node, EXECUTE, path)
     child = node.children.get(part)
     if child is None:
         raise ShellError(f"{path}: No such file or directory")
     return child
 
 
-def make_dirs(root, parts):
+def make_dirs(root, parts, mtime=None):
     """Создать (при необходимости) цепочку каталогов и вернуть последний.
 
     :raises VfsError: если на пути встретился файл
@@ -154,7 +170,7 @@ def make_dirs(root, parts):
     for part in parts:
         child = node.children.get(part)
         if child is None:
-            child = node.add(VfsDir(part))
+            child = node.add(VfsDir(part, mtime=mtime))
         elif not child.is_dir:
             raise VfsError(f"'{part}' is both a file and a directory")
         node = child
@@ -199,11 +215,11 @@ def _add_entry(root, info, data):
     mode = (info.external_attr >> ZIP_ATTR_SHIFT) & PERMISSION_MASK
     mtime = time.mktime(info.date_time + TIME_TUPLE_TAIL)
     if info.is_dir():
-        node = make_dirs(root, parts)
+        node = make_dirs(root, parts, mtime)
         node.mode = mode or DEFAULT_DIR_MODE
         node.mtime = mtime
         return
-    parent = make_dirs(root, parts[:-1])
+    parent = make_dirs(root, parts[:-1], mtime)
     if parts[-1] in parent.children:
         raise VfsError(f"duplicate entry: {info.filename}")
     parent.add(VfsFile(parts[-1], data, mode or DEFAULT_FILE_MODE, mtime))

@@ -1,0 +1,46 @@
+# Стартовый скрипт этапа 4: ls, cd, pwd, uniq, date — все режимы и ошибки.
+# Запуск: ./run.sh --vfs build/vfs/deep.zip --script examples/stage4.txt
+#
+# --- pwd и ls
+pwd
+ls
+ls -a
+ls -l
+ls -la /projects/app
+ls /etc /var/log
+ls /etc/motd
+ls /nope /etc
+ls -z
+pwd extra
+# --- cd: абсолютные и относительные пути, .., ~, -
+cd /projects/app/src
+pwd
+cd ../docs
+ls -l
+cd ./../../..
+pwd
+cd -
+cd
+pwd
+cd /etc/motd
+cd /no/such/dir
+cd a b
+# --- uniq: все режимы
+uniq /var/log/syslog
+uniq -c /var/log/syslog
+uniq -d /var/log/syslog
+uniq -u /var/log/syslog
+uniq -c /var/log/access.log
+uniq -ic /var/log/access.log
+uniq
+uniq /var/log
+uniq /var/log/syslog extra
+uniq /no/such/file
+# --- date: все режимы
+date
+date -u
+date -I
+date "+%d.%m.%Y %H:%M"
+date tomorrow
+date +%Y +%m
+date -x
