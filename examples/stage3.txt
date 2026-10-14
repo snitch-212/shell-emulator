@@ -1,0 +1,23 @@
+# Стартовый скрипт этапа 3: команды этапов 1-3, работа с VFS и ошибки.
+# Запуск: ./run.sh --vfs build/vfs/deep.zip --script examples/stage3.txt
+#
+# --- содержимое VFS
+vfs-info
+vfs-info /projects/app
+vfs-info /no/such/path
+# --- сохранение состояния VFS в ZIP-архив
+vfs-save build/stage3-copy.zip
+vfs-save
+vfs-save /no/such/dir/out.zip
+vfs-save a.zip b.zip
+# --- парсер и команды-заглушки
+ls -l "$HOME" '$HOME'
+cd /projects
+cd a b
+ls -z
+unknown_command
+ls 'unterminated
+# --- выход
+exit abc
+exit 1 2
+exit 0

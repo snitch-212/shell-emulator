@@ -2,13 +2,16 @@
 PYTHON ?= python3
 export PYTHONPATH := src
 
-.PHONY: run test lint clean
+.PHONY: run test lint vfs clean
 
 run:
 	$(PYTHON) -m shell_emulator $(ARGS)
 
 test:
 	$(PYTHON) -m unittest discover -s tests -t . -v
+
+vfs:
+	$(PYTHON) tools/make_vfs.py
 
 lint:
 	$(PYTHON) tools/check_style.py src tests tools

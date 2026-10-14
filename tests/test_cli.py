@@ -34,10 +34,17 @@ class CliTest(unittest.TestCase):
 
     def test_debug_output(self):
         """При запуске выводятся все параметры."""
-        code, out, _ = run_main("--vfs", "a.zip")
-        self.assertEqual(code, 0)
-        self.assertIn("--vfs     = a.zip", out)
-        self.assertIn("--script  = (not set)", out)
+        code, out, _ = run_main("--script", "s.txt")
+        self.assertEqual(code, 1)
+        self.assertIn("--vfs     = (not set)", out)
+        self.assertIn("--script  = s.txt", out)
+
+    def test_missing_vfs(self):
+        """Отсутствующий архив VFS — сообщение об ошибке и код 1."""
+        code, out, err = run_main("--vfs", "no/such.zip")
+        self.assertEqual(code, 1)
+        self.assertIn("--vfs     = no/such.zip", out)
+        self.assertIn("cannot load VFS 'no/such.zip'", err)
 
     def test_script_echoes_dialog(self):
         """Скрипт показывает приглашение, команду и её вывод."""

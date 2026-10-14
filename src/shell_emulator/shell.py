@@ -8,6 +8,7 @@ import sys
 from .commands import COMMANDS
 from .errors import ExitRequest, ShellError
 from .parser import parse_line
+from .vfs import default_vfs
 
 STATUS_OK = 0
 STATUS_ERROR = 1
@@ -22,13 +23,14 @@ class Shell:
     ``err``, что позволяет подменять потоки в тестах.
     """
 
-    def __init__(self, out=None, err=None, env=None):
-        """Создать оболочку с потоками вывода и окружением."""
+    def __init__(self, out=None, err=None, env=None, vfs=None):
+        """Создать оболочку с потоками вывода, окружением и VFS."""
         self.out = out or sys.stdout
         self.err = err or sys.stderr
         self.env = os.environ if env is None else env
         self.user = getpass.getuser()
         self.host = socket.gethostname()
+        self.vfs = vfs or default_vfs(self.user)
         self.commands = dict(COMMANDS)
         self.last_status = STATUS_OK
         self.location = ""
@@ -43,9 +45,17 @@ class Shell:
         print(message, file=self.err)
         self.err.flush()
 
+    def home_dir(self):
+        """Вернуть путь домашнего каталога пользователя в VFS."""
+        return f"/home/{self.user}"
+
     def cwd_display(self):
-        """Вернуть текущий каталог для приглашения."""
-        return "~"
+        """Вернуть текущий каталог VFS для приглашения (~ — домашний)."""
+        path = self.vfs.cwd.path()
+        home = self.vfs.home
+        if home != "/" and (path == home or path.startswith(home + "/")):
+            return "~" + path[len(home):]
+        return path
 
     def prompt(self):
         """Сформировать приглашение вида user@host:~$."""
@@ -114,11 +124,17 @@ class Shell:
         finally:
             self.location = ""
 
-    def repl(self, read_line=input):
-        """Запустить интерактивный цикл; вернуть код завершения."""
+    def repl(self, read_line=input, echo=False):
+        """Запустить интерактивный цикл; вернуть код завершения.
+
+        :param read_line: функция чтения строки с приглашением
+        :param echo: повторять введённую строку (ввод не с терминала)
+        """
         while True:
             try:
                 line = read_line(self.prompt())
+                if echo:
+                    self.write(line)
             except EOFError:
                 self.write()
                 return self.last_status

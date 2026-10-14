@@ -1,9 +1,11 @@
 """Интерфейс командной строки эмулятора: параметры и запуск."""
 
 import argparse
+import sys
 
 from .errors import ExitRequest, ShellError
 from .shell import STATUS_ERROR, Shell
+from .vfs import load_zip
 
 
 def build_parser():
@@ -26,10 +28,12 @@ def print_config(args, shell):
 
 
 def start(args, shell):
-    """Выполнить стартовый скрипт и запустить REPL."""
+    """Загрузить VFS, выполнить стартовый скрипт и запустить REPL."""
+    if args.vfs:
+        shell.vfs = load_zip(args.vfs, home=shell.home_dir())
     if args.script:
         shell.run_script(args.script)
-    return shell.repl()
+    return shell.repl(echo=not sys.stdin.isatty())
 
 
 def main(argv=None):

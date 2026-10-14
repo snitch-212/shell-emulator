@@ -23,6 +23,7 @@ UPPER = re.compile(r"^_?[A-Z][A-Z0-9_]*$")
 BRANCHES = (ast.If, ast.For, ast.While, ast.IfExp, ast.ExceptHandler,
             ast.Assert, ast.comprehension, ast.match_case)
 FUNCTIONS = (ast.FunctionDef, ast.AsyncFunctionDef)
+FRAMEWORK_NAMES = {"setUp", "tearDown", "setUpClass", "tearDownClass"}
 
 
 def complexity(func):
@@ -48,7 +49,7 @@ def check_function(node, report):
     score = complexity(node)
     if score > MAX_COMPLEXITY:
         report(node, f"Ц1 функция {node.name}: сложность {score}")
-    if not SNAKE.match(node.name):
+    if node.name not in FRAMEWORK_NAMES and not SNAKE.match(node.name):
         report(node, f"И1 имя функции {node.name}")
 
 

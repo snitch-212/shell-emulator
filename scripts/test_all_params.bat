@@ -1,8 +1,9 @@
 @echo off
 rem Check all parameters together, help and unknown parameter
 cd /d "%~dp0.."
+python tools\make_vfs.py > NUL
 echo === --vfs and --script together ===
-call run.bat --vfs vfs\example.zip --script examples\exit_code.txt
+call run.bat --vfs build\vfs\deep.zip --script examples\exit_code.txt
 echo exit code: %ERRORLEVEL%
 echo === --help ===
 call run.bat --help
