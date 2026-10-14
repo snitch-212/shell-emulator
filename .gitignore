@@ -1,0 +1,17 @@
+# Служебные файлы Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Артефакты сборки и сгенерированные VFS-архивы
+build/
+dist/
+*.zip
+
+# Настройки редакторов кода
+.vscode/
+.idea/
+*.swp
+.DS_Store
