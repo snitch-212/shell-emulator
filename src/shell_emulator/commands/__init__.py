@@ -6,12 +6,14 @@
 
 from .basic import cmd_exit
 from .fs import cmd_cd, cmd_ls, cmd_pwd
+from .perms import cmd_chmod
 from .system import cmd_date
 from .text import cmd_uniq
 from .vfs_commands import cmd_vfs_info, cmd_vfs_save
 
 COMMANDS = {
     "cd": cmd_cd,
+    "chmod": cmd_chmod,
     "date": cmd_date,
     "exit": cmd_exit,
     "ls": cmd_ls,

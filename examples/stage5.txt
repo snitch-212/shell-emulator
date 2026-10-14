@@ -1,0 +1,43 @@
+# Стартовый скрипт этапа 5: chmod — все режимы, влияние прав и ошибки.
+# Изменения выполняются только в памяти; архив на диске не меняется.
+# Запуск: ./run.sh --vfs build/vfs/deep.zip --script examples/stage5.txt
+#
+# --- восьмеричный режим
+ls -l /projects/app
+chmod 700 /projects/app/run.sh
+chmod -v 0640 /etc/motd
+ls -l /projects/app/run.sh /etc/motd
+# --- символьный режим: +, -, =, несколько выражений, без указания кому
+chmod -v u+x /etc/motd
+chmod -v go-r,u-w /etc/motd
+chmod -v a=rw /etc/motd
+chmod -v u=rwx,g=rx,o= /etc/motd
+chmod -v +x /projects/app/docs/guide.md
+chmod -v -w /projects/app/docs/guide.md
+# --- рекурсивно (-R) с подробным выводом (-v)
+chmod -Rv go= /projects/app/src
+ls -la /projects/app/src
+# --- права влияют на другие команды
+chmod -x /projects
+cd /projects
+ls /projects/app
+chmod +x /projects
+cd /projects
+cd
+chmod u-r /var/log/syslog
+uniq /var/log/syslog
+chmod u+r /var/log/syslog
+uniq -c /var/log/syslog
+chmod 0 /etc
+ls /etc
+chmod 755 /etc
+ls -l /etc
+# --- ошибки
+chmod
+chmod 755
+chmod abc /etc/motd
+chmod 999 /etc/motd
+chmod u+z /etc/motd
+chmod 644 /nope /etc/motd
+# --- сохранение изменённой VFS на диск
+vfs-save build/stage5.zip
