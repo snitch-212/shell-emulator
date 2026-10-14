@@ -1,0 +1,4 @@
+# Скрипт завершает эмулятор с кодом 3
+ls
+exit 3
+ls this-line-is-never-executed

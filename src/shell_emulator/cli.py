@@ -1,10 +1,46 @@
-"""Интерфейс командной строки эмулятора."""
+"""Интерфейс командной строки эмулятора: параметры и запуск."""
 
-from .shell import Shell
+import argparse
+
+from .errors import ExitRequest, ShellError
+from .shell import STATUS_ERROR, Shell
+
+
+def build_parser():
+    """Создать парсер параметров командной строки."""
+    parser = argparse.ArgumentParser(
+        prog="shell_emulator",
+        description="Эмулятор командной оболочки UNIX-подобной ОС.")
+    parser.add_argument("--vfs", metavar="PATH",
+                        help="путь к физическому расположению VFS")
+    parser.add_argument("--script", metavar="PATH",
+                        help="путь к стартовому скрипту")
+    return parser
+
+
+def print_config(args, shell):
+    """Вывести отладочную информацию о заданных параметрах."""
+    shell.write("[debug] emulator parameters:")
+    for name, value in vars(args).items():
+        shell.write(f"[debug]   --{name:<7} = {value or '(not set)'}")
+
+
+def start(args, shell):
+    """Выполнить стартовый скрипт и запустить REPL."""
+    if args.script:
+        shell.run_script(args.script)
+    return shell.repl()
 
 
 def main(argv=None):
     """Запустить эмулятор и вернуть код завершения процесса."""
-    del argv
+    args = build_parser().parse_args(argv)
     shell = Shell()
-    return shell.repl()
+    print_config(args, shell)
+    try:
+        return start(args, shell)
+    except ShellError as exc:
+        shell.error(f"shell: {exc}")
+        return STATUS_ERROR
+    except ExitRequest as request:
+        return request.code

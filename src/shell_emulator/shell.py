@@ -31,6 +31,7 @@ class Shell:
         self.host = socket.gethostname()
         self.commands = dict(COMMANDS)
         self.last_status = STATUS_OK
+        self.location = ""
 
     def write(self, text=""):
         """Вывести строку текста в поток вывода."""
@@ -75,9 +76,43 @@ class Shell:
 
     def _fail(self, message, status):
         """Сообщить об ошибке и запомнить код возврата."""
-        self.error(message)
+        self.error(self.location + message)
         self.last_status = status
         return status
+
+    def run_script(self, path):
+        """Выполнить стартовый скрипт, отображая ввод и вывод.
+
+        Ошибки в отдельных строках выводятся с указанием номера
+        строки, после чего выполнение скрипта продолжается.
+
+        :raises ShellError: если файл скрипта нельзя прочитать
+        :raises ExitRequest: если в скрипте выполнена команда exit
+        """
+        try:
+            with open(path, encoding="utf-8") as file:
+                lines = file.read().splitlines()
+        except (OSError, UnicodeDecodeError) as exc:
+            reason = getattr(exc, "strerror", None) or exc
+            raise ShellError(f"cannot read script '{path}': {reason}") \
+                from None
+        for number, line in enumerate(lines, start=1):
+            self._run_script_line(f"{path}: line {number}: ", line)
+
+    def _run_script_line(self, location, line):
+        """Показать строку скрипта как ввод пользователя и выполнить."""
+        stripped = line.strip()
+        if not stripped:
+            return
+        if stripped.startswith("#"):
+            self.write(line)
+            return
+        self.write(self.prompt() + line)
+        self.location = location
+        try:
+            self.execute(line)
+        finally:
+            self.location = ""
 
     def repl(self, read_line=input):
         """Запустить интерактивный цикл; вернуть код завершения."""
