@@ -1,0 +1,97 @@
+"""Ядро эмулятора: приглашение, выполнение команд и цикл REPL."""
+
+import getpass
+import os
+import socket
+import sys
+
+from .commands import COMMANDS
+from .errors import ExitRequest, ShellError
+from .parser import parse_line
+
+STATUS_OK = 0
+STATUS_ERROR = 1
+STATUS_NOT_FOUND = 127
+STATUS_INTERRUPTED = 130
+
+
+class Shell:
+    """Эмулятор командной оболочки.
+
+    Вывод команд направляется в ``out``, сообщения об ошибках — в
+    ``err``, что позволяет подменять потоки в тестах.
+    """
+
+    def __init__(self, out=None, err=None, env=None):
+        """Создать оболочку с потоками вывода и окружением."""
+        self.out = out or sys.stdout
+        self.err = err or sys.stderr
+        self.env = os.environ if env is None else env
+        self.user = getpass.getuser()
+        self.host = socket.gethostname()
+        self.commands = dict(COMMANDS)
+        self.last_status = STATUS_OK
+
+    def write(self, text=""):
+        """Вывести строку текста в поток вывода."""
+        print(text, file=self.out)
+
+    def error(self, message):
+        """Вывести сообщение об ошибке в поток ошибок."""
+        self.out.flush()
+        print(message, file=self.err)
+        self.err.flush()
+
+    def cwd_display(self):
+        """Вернуть текущий каталог для приглашения."""
+        return "~"
+
+    def prompt(self):
+        """Сформировать приглашение вида user@host:~$."""
+        return f"{self.user}@{self.host}:{self.cwd_display()}$ "
+
+    def execute(self, line):
+        """Разобрать и выполнить одну строку; вернуть код возврата.
+
+        :raises ExitRequest: если выполнена команда exit
+        """
+        try:
+            words = parse_line(line, self.env)
+        except ShellError as exc:
+            return self._fail(f"shell: {exc}", STATUS_ERROR)
+        if not words:
+            return self.last_status
+        name, args = words[0], words[1:]
+        handler = self.commands.get(name)
+        if handler is None:
+            return self._fail(f"{name}: command not found",
+                              STATUS_NOT_FOUND)
+        try:
+            handler(self, args)
+        except ShellError as exc:
+            return self._fail(f"{name}: {exc}", STATUS_ERROR)
+        self.last_status = STATUS_OK
+        return STATUS_OK
+
+    def _fail(self, message, status):
+        """Сообщить об ошибке и запомнить код возврата."""
+        self.error(message)
+        self.last_status = status
+        return status
+
+    def repl(self, read_line=input):
+        """Запустить интерактивный цикл; вернуть код завершения."""
+        while True:
+            try:
+                line = read_line(self.prompt())
+            except EOFError:
+                self.write()
+                return self.last_status
+            except KeyboardInterrupt:
+                self.write("^C")
+                self.last_status = STATUS_INTERRUPTED
+                continue
+            try:
+                self.execute(line)
+            except ExitRequest as request:
+                return request.code
