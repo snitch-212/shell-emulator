@@ -134,8 +134,11 @@ run.bat  [--vfs PATH] [--script PATH]       # Windows
 make run ARGS="--vfs build/vfs/deep.zip"    # через Makefile
 ```
 
-Тестовые VFS-архивы (в репозиторий не входят, так как это артефакты
-сборки) создаются в каталоге `build/vfs`:
+Тестовые VFS-архивы в репозиторий не входят (это артефакты сборки), но
+создаются автоматически в каталоге `build/vfs`: при первом запуске
+`run.sh` / `run.bat` (с этапа 3) и при запуске любого скрипта из
+`scripts/`. После клонирования репозитория никаких подготовительных
+шагов не требуется. Создать архивы вручную можно так:
 
 ```sh
 make vfs                  # или: python3 tools/make_vfs.py
@@ -266,6 +269,67 @@ examples/             стартовые скрипты эмулятора
 scripts/              скрипты ОС (.sh, .bat) для проверки эмулятора
 tools/check_style.py  проверка кода по правилам оформления
 tools/make_vfs.py     генерация тестовых VFS-архивов
-run.sh, run.bat       скрипты запуска
+run.sh, run.bat       скрипты запуска (создают тестовые VFS при первом запуске)
+.gitattributes        окончания строк: .bat — CRLF, остальное — LF
 Makefile              цели run, test, lint, vfs, clean
 ```
+
+## 6. Ветки и демонстрация по этапам
+
+Каждый этап хранится в своей ветке. Ветки накопительные: в
+`stage-N-...` находится всё, что сделано к этапу N включительно, а
+`main` — итоговая версия (этап 5 и описание в README).
+
+| Ветка | Этап | Что показать |
+|-------|------|--------------|
+| `stage-1-repl` | REPL | `run`: приглашение, переменные, заглушки, ошибки |
+| `stage-2-config` | Конфигурация | `test_script`, `test_all_params` |
+| `stage-3-vfs` | VFS | `test_vfs_deep`, `test_vfs_errors` |
+| `stage-4-commands` | Основные команды | `examples/stage4.txt`, `ls`, `cd`, `pwd`, `uniq`, `date` |
+| `stage-5-chmod` | Дополнительные команды | `examples/stage5.txt`, `chmod` |
+| `main` | Итог | все этапы, модульные тесты, проверка стиля |
+
+Демонстрация на новом компьютере (нужны только Git и Python 3.10+):
+
+```sh
+git clone https://github.com/snitch-212/shell-emulator
+cd shell-emulator
+git checkout stage-1-repl        # затем stage-2-config, stage-3-vfs, ...
+```
+
+Linux / macOS (в Windows — Git Bash или WSL, интерпретатор `python3`
+или `python` выбирается автоматически):
+
+```sh
+./run.sh                                                      # этап 1
+./scripts/test_script.sh                                      # этап 2
+./scripts/test_all_params.sh                                  # этап 2
+./scripts/test_vfs_deep.sh                                    # этап 3
+./scripts/test_vfs_errors.sh                                  # этап 3
+./run.sh --vfs build/vfs/deep.zip --script examples/stage4.txt  # этап 4
+./run.sh --vfs build/vfs/deep.zip --script examples/stage5.txt  # этап 5
+python3 -m unittest discover -s tests -t .                    # main
+python3 tools/check_style.py                                  # main
+```
+
+Если у файлов нет права на выполнение (например, после копирования
+с флешки), запускайте их через `sh`: `sh ./run.sh`,
+`sh scripts/test_script.sh`.
+
+Windows (PowerShell, перед именем скрипта нужно писать `.\`):
+
+```text
+.\run.bat                                                         этап 1
+.\scripts\test_script.bat                                         этап 2
+.\scripts\test_all_params.bat                                     этап 2
+.\scripts\test_vfs_deep.bat                                       этап 3
+.\scripts\test_vfs_errors.bat                                     этап 3
+.\run.bat --vfs build\vfs\deep.zip --script examples\stage4.txt   этап 4
+.\run.bat --vfs build\vfs\deep.zip --script examples\stage5.txt   этап 5
+python -m unittest discover -s tests -t .                         main
+python tools\check_style.py                                       main
+```
+
+Правка более раннего этапа: перейти в его ветку
+(`git checkout stage-2-config`), внести изменения коммитом, затем
+перенести их в следующие ветки командой `git rebase`.
